@@ -1,0 +1,183 @@
+{% load custom_filters %}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reports</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+        }
+
+        h1 {
+            margin-bottom: 20px;
+        }
+
+        form {
+            margin-bottom: 20px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        label {
+            margin-right: 10px;
+        }
+
+        select, input[type="text"], input[type="number"] {
+            width: 150px;
+            padding: 5px;
+            margin-right: 10px;
+        }
+
+        button {
+            padding: 5px 10px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background-color: #0056b3;
+        }
+
+        .top-right {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+        }
+
+        .table-container {
+            overflow-x: auto;
+            margin-top: 20px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th, td {
+            border: 1px solid #dddddd;
+            text-align: left;
+            padding: 8px;
+        }
+
+        th {
+            background-color: #f2f2f2;
+        }
+
+        tr:nth-child(even) {
+            background-color: #f2f2f2;
+        }
+
+        /* Media query for smaller screens */
+        @media (max-width: 600px) {
+            form {
+                flex-direction: column;
+            }
+
+            select, input[type="text"], input[type="number"], button {
+                width: 100%;
+                margin-bottom: 10px;
+            }
+
+            th, td {
+                white-space: nowrap;
+            }
+
+            .table-container {
+                overflow-x: auto;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="top-right">
+        <a href="{% url 'homepage' %}">
+            <button type="button">Home</button>
+        </a>
+    </div>
+
+    <h1>Reports</h1>
+
+    <form method="GET">
+        <label for="branch">Branch:</label>
+        <select name="branch" id="branch">
+            <option value="">All</option>
+            {% for choice in branch_choices %}
+                <option value="{{ choice.0 }}" {% if branch == choice.0 %}selected{% endif %}>{{ choice.1 }}</option>
+            {% endfor %}
+        </select>
+
+        <label for="course">Course:</label>
+        <select name="course" id="course">
+            <option value="">All</option>
+            {% for course_choice in course_choices %}
+                <option value="{{ course_choice.0 }}" {% if course == course_choice.0 %}selected{% endif %}>{{ course_choice.1 }}</option>
+            {% endfor %}
+        </select>
+
+        <label for="section">Section:</label>
+        <select name="section" id="section">
+            <option value="">All</option>
+            {% for choice in section_choices %}
+                <option value="{{ choice.0 }}" {% if selected_section == choice.0 %}selected{% endif %}>{{ choice.1 }}</option>
+            {% endfor %}
+        </select>
+
+        <label for="months_paid">Months Paid:</label>
+        <input type="number" name="months_paid" min="0" max="12" step="1" value="{{ selected_months_paid }}">
+
+        <button type="submit">Filter</button>
+        <a href="{% url 'generate_pdf' %}?branch={{ branch }}&course={{ course }}&section={{ selected_section }}&months_paid={{ selected_months_paid }}" target="_blank">
+            <button type="button">Download PDF</button>
+        </a>
+        <a href="{% url 'generate_excel' %}?branch={{ branch }}&course={{ course }}&section={{ selected_section }}&months_paid={{ selected_months_paid }}">
+            <button type="button">Download Excel</button>
+        </a>
+    </form>
+
+    <div class="table-container">
+        <table>
+            <thead>
+                <tr>
+                    <th>Admission Number</th>
+                    <th>Name</th>
+                    <th>Phone</th>
+                    <th>Course</th>
+                    <th>Branch</th>
+                    <th>Section</th>
+                    <th>Monthly Fees</th>
+                    <th>Total Fees</th>
+                    <th>Total Paid</th>
+                    <th>Total Due</th>
+                    <th>Months Paid</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in additional_info %}
+                <tr>
+                    <td>{{ item.student.admission_number }}</td>
+                    <td>{{ item.student.name }}</td>
+                    <td>{{ item.student.phone }}</td>
+                    <td>{{ item.student.course }}</td>
+                    <td>{{ item.student.branch }}</td>
+                    <td>{{ item.student.section }}</td>
+                    <td>{{ item.monthly_fees|indian_number_format  }}</td>
+                    <td>{{ item.total_fees|indian_number_format }}</td>
+                    <td style="color: rgb(34, 169, 88);font-weight: bold;">{{ item.total_paid|indian_number_format  }}</td>
+                    <td style="color: rgb(255, 85, 0);font-weight: bold;">{{ item.total_due|indian_number_format  }}</td>
+                    <td>{{ item.months_paid|floatformat:"1" }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</body>
+</html>
