@@ -147,10 +147,10 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = os.environ.get('SECRET_KEY', 'django-insecure-default-khazana-secret-key')
 
 # Make sure DEBUG is off in production
-DEBUG = os.environ.get('DEBUG', 'False') == 'True'
+DEBUG = os.environ.get('DEBUG', 'False') == 'False'
 
 # Add production domain here
-ALLOWED_HOSTS = ['new-fee-app.onrender.com', 'your-production-domain.com']
+ALLOWED_HOSTS = ['new-fee-app.onrender.com', 'https://new-fee-app.onrender.com']
 
 # Application Definition
 INSTALLED_APPS = [
@@ -240,3 +240,11 @@ X_FRAME_OPTIONS = 'DENY'
 
 # Additional Production Configurations
 DATA_UPLOAD_MAX_NUMBER_FIELDS = 500000  # Increase the limit of uploaded fields if needed
+# Default primary key field type
+DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+# Authentication settings
+LOGIN_URL = 'login'
+LOGOUT_URL = 'logout'
+LOGIN_REDIRECT_URL = 'homepage'  # Redirect after successful login
+LOGOUT_REDIRECT_URL = 'homepage'  # Redirect after successful logout
