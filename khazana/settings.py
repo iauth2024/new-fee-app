@@ -239,7 +239,7 @@ SECURE_BROWSER_XSS_FILTER = True
 X_FRAME_OPTIONS = 'DENY'
 
 # Additional Production Configurations
-DATA_UPLOAD_MAX_NUMBER_FIELDS = 500000  # Increase the limit of uploaded fields if needed
+DATA_UPLOAD_MAX_NUMBER_FIELDS = 1500000  # Increase the limit of uploaded fields if needed
 # Default primary key field type
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 

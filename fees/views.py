@@ -800,13 +800,18 @@ def upload_file(request):
         if form.is_valid():
             file = request.FILES['file']
             if file.name.endswith('.xlsx'):
-                df = pd.read_excel(file)
+                df = pd.read_excel(file)  # Load the file
+
+                # List to store successful student objects for bulk insertion
+                new_students = []
                 success_students = []
                 failed_students = []
                 already_exists_students = []
 
+                # Process the DataFrame
                 for index, row in df.iterrows():
                     admission_number = row['Admission Number']
+                    
                     # Check if admission number already exists
                     if Student.objects.filter(admission_number=admission_number).exists():
                         already_exists_students.append({
@@ -815,7 +820,7 @@ def upload_file(request):
                             'reason': 'Already Exists'
                         })
                     else:
-                        # Check if admission number with different data exists
+                        # Check for potential duplicates
                         if Student.objects.exclude(admission_number=admission_number).filter(
                                 name=row['Name'],
                                 phone=row['Phone'],
@@ -831,7 +836,7 @@ def upload_file(request):
                                 'reason': 'Duplicate Number'
                             })
                         else:
-                            # If admission number doesn't exist with the same or different data, create new student
+                            # Add new student to the bulk create list
                             student = Student(
                                 admission_number=admission_number,
                                 name=row['Name'],
@@ -842,17 +847,21 @@ def upload_file(request):
                                 monthly_fees=row['Monthly Fees'],
                                 student_type=row['Student Type']
                             )
-                            student.save()
+                            new_students.append(student)
                             success_students.append(student)
+
+                # Bulk insert all new students at once
+                if new_students:
+                    Student.objects.bulk_create(new_students, batch_size=1000)  # Insert in batches of 1000
 
                 # Prepare data for the template
                 total_students_to_upload = len(df)
                 already_exists_no = len(already_exists_students)
                 failed_no = len(failed_students)
                 success_no = total_students_to_upload - failed_no - already_exists_no
-                newly_added_no = success_no  # Newly added students count
+                newly_added_no = len(new_students)  # Newly added students count
 
-                # Render the template with the upload result data
+                # Render the result
                 return render(request, 'upload_result.html', {
                     'total_students_to_upload': total_students_to_upload,
                     'already_exists_no': already_exists_no,
@@ -863,7 +872,9 @@ def upload_file(request):
                     'failed_students': failed_students,
                     'success_students': success_students,
                 })
-
+        else:
+            print(f"Form errors: {form.errors}")
     else:
         form = UploadFileForm()
+
     return render(request, 'upload_file.html', {'form': form})
