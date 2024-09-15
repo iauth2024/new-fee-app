@@ -132,25 +132,17 @@
 ################################################################################
 
 
-############### Production Settings ##################
-
-
 from pathlib import Path
 import os
-import dj_database_url  # type: ignore # for database connection management
-from whitenoise import WhiteNoise  # type: ignore # for serving static files in production
+import dj_database_url  # type: ignore
+from whitenoise import WhiteNoise  # type: ignore
 
-# Base directory of the project
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-# Security settings
+# Security
 SECRET_KEY = os.environ.get('SECRET_KEY', 'django-insecure-default-khazana-secret-key')
-
-# Make sure DEBUG is off in production
-DEBUG = os.environ.get('DEBUG', 'False') == 'False'
-
-# Add production domain here
-ALLOWED_HOSTS = ['new-fee-app.onrender.com', 'https://new-fee-app.onrender.com']
+DEBUG = os.environ.get('DEBUG', 'False') == 'True'
+ALLOWED_HOSTS = ['new-fee-app.onrender.com']  # Add your production domain here
 
 # Application Definition
 INSTALLED_APPS = [
@@ -160,12 +152,12 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'fees',  # Your custom app
+    'fees',
 ]
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
-    'whitenoise.middleware.WhiteNoiseMiddleware',  # Whitenoise for serving static files
+    'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -179,7 +171,7 @@ ROOT_URLCONF = 'khazana.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [BASE_DIR / 'templates'],  # Custom templates directory
+        'DIRS': [BASE_DIR / 'templates'],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -194,14 +186,19 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'khazana.wsgi.application'
 
-# Production Database Configuration using PostgreSQL (Use environment variables for security)
+# Database - Same as new_vision
 DATABASES = {
-    'default': dj_database_url.config(
-        default=os.environ.get('DATABASE_URL', 'postgres://newvision_db_user:LLSVRdqZJRDoBbOiozg3JkYEhpkdEQHI@dpg-cqsrbgij1k6c73fn0iig-a.oregon-postgres.render.com:5432/newvision_db')
-    )
+    'default': {
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': 'newvision_db',
+        'USER': 'newvision_db_user',
+        'PASSWORD': 'LLSVRdqZJRDoBbOiozg3JkYEhpkdEQHI',
+        'HOST': 'dpg-cqsrbgij1k6c73fn0iig-a.oregon-postgres.render.com',
+        'PORT': '5432',
+    }
 }
 
-# Password validation for security
+# Password Validators
 AUTH_PASSWORD_VALIDATORS = [
     {
         'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator',
@@ -217,34 +214,11 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
-# Static files settings for production
+# Static and Media Files
 STATIC_URL = '/static/'
-STATICFILES_DIRS = [BASE_DIR / 'static']  # Additional static file directories
-STATIC_ROOT = BASE_DIR / 'staticfiles'  # Where collected static files will be stored
-
-# Use WhiteNoise for static file compression and caching
+STATICFILES_DIRS = [BASE_DIR / 'static']
+STATIC_ROOT = BASE_DIR / 'staticfiles'
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
 # Default primary key field type
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
-
-# Additional security settings for production
-SECURE_SSL_REDIRECT = os.environ.get('SECURE_SSL_REDIRECT', 'True') == 'True'
-SESSION_COOKIE_SECURE = True
-CSRF_COOKIE_SECURE = True
-SECURE_HSTS_SECONDS = 31536000  # Enable HTTP Strict Transport Security (HSTS)
-SECURE_HSTS_PRELOAD = True
-SECURE_HSTS_INCLUDE_SUBDOMAINS = True
-SECURE_BROWSER_XSS_FILTER = True
-X_FRAME_OPTIONS = 'DENY'
-
-# Additional Production Configurations
-DATA_UPLOAD_MAX_NUMBER_FIELDS = 1500000  # Increase the limit of uploaded fields if needed
-# Default primary key field type
-DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
-
-# Authentication settings
-LOGIN_URL = 'login'
-LOGOUT_URL = 'logout'
-LOGIN_REDIRECT_URL = 'homepage'  # Redirect after successful login
-LOGOUT_REDIRECT_URL = 'homepage'  # Redirect after successful logout

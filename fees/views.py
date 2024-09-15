@@ -791,87 +791,91 @@ from django.shortcuts import render
 import pandas as pd
 from .forms import UploadFileForm
 from .models import Student
-
+import logging
+logger = logging.getLogger(__name__)
 @login_required
 @user_passes_test(lambda u: u.is_staff)  # Ensure only admin users can access this view
+
+
+
+
 def upload_file(request):
     if request.method == 'POST':
         form = UploadFileForm(request.POST, request.FILES)
         if form.is_valid():
             file = request.FILES['file']
             if file.name.endswith('.xlsx'):
-                df = pd.read_excel(file)  # Load the file
+                try:
+                    df = pd.read_excel(file)  # Load the file
 
-                # List to store successful student objects for bulk insertion
-                new_students = []
-                success_students = []
-                failed_students = []
-                already_exists_students = []
+                    new_students = []
+                    success_students = []
+                    failed_students = []
+                    already_exists_students = []
 
-                # Process the DataFrame
-                for index, row in df.iterrows():
-                    admission_number = row['Admission Number']
-                    
-                    # Check if admission number already exists
-                    if Student.objects.filter(admission_number=admission_number).exists():
-                        already_exists_students.append({
-                            'admission_number': admission_number,
-                            'name': row['Name'],
-                            'reason': 'Already Exists'
-                        })
-                    else:
-                        # Check for potential duplicates
-                        if Student.objects.exclude(admission_number=admission_number).filter(
-                                name=row['Name'],
-                                phone=row['Phone'],
-                                course=row['Course'],
-                                section=row['section'],
-                                branch=row['Branch'],
-                                monthly_fees=row['Monthly Fees'],
-                                student_type=row['Student Type']
-                        ).exists():
-                            failed_students.append({
+                    for index, row in df.iterrows():
+                        admission_number = row['Admission Number']
+
+                        if Student.objects.filter(admission_number=admission_number).exists():
+                            already_exists_students.append({
                                 'admission_number': admission_number,
                                 'name': row['Name'],
-                                'reason': 'Duplicate Number'
+                                'reason': 'Already Exists'
                             })
                         else:
-                            # Add new student to the bulk create list
-                            student = Student(
-                                admission_number=admission_number,
-                                name=row['Name'],
-                                phone=row['Phone'],
-                                course=row['Course'],
-                                section=row['section'],
-                                branch=row['Branch'],
-                                monthly_fees=row['Monthly Fees'],
-                                student_type=row['Student Type']
-                            )
-                            new_students.append(student)
-                            success_students.append(student)
+                            if Student.objects.exclude(admission_number=admission_number).filter(
+                                    name=row['Name'],
+                                    phone=row['Phone'],
+                                    course=row['Course'],
+                                    section=row['section'],
+                                    branch=row['Branch'],
+                                    monthly_fees=row['Monthly Fees'],
+                                    student_type=row['Student Type']
+                            ).exists():
+                                failed_students.append({
+                                    'admission_number': admission_number,
+                                    'name': row['Name'],
+                                    'reason': 'Duplicate Number'
+                                })
+                            else:
+                                student = Student(
+                                    admission_number=admission_number,
+                                    name=row['Name'],
+                                    phone=row['Phone'],
+                                    course=row['Course'],
+                                    section=row['section'],
+                                    branch=row['Branch'],
+                                    monthly_fees=row['Monthly Fees'],
+                                    student_type=row['Student Type']
+                                )
+                                new_students.append(student)
+                                success_students.append(student)
 
-                # Bulk insert all new students at once
-                if new_students:
-                    Student.objects.bulk_create(new_students, batch_size=1000)  # Insert in batches of 1000
+                    if new_students:
+                        Student.objects.bulk_create(new_students, batch_size=1000)
 
-                # Prepare data for the template
-                total_students_to_upload = len(df)
-                already_exists_no = len(already_exists_students)
-                failed_no = len(failed_students)
-                success_no = total_students_to_upload - failed_no - already_exists_no
-                newly_added_no = len(new_students)  # Newly added students count
+                    total_students_to_upload = len(df)
+                    already_exists_no = len(already_exists_students)
+                    failed_no = len(failed_students)
+                    success_no = total_students_to_upload - failed_no - already_exists_no
+                    newly_added_no = len(new_students)
 
-                # Render the result
-                return render(request, 'upload_result.html', {
-                    'total_students_to_upload': total_students_to_upload,
-                    'already_exists_no': already_exists_no,
-                    'failed_no': failed_no,
-                    'success_no': success_no,
-                    'newly_added_no': newly_added_no,
-                    'already_exists_students': already_exists_students,
-                    'failed_students': failed_students,
-                    'success_students': success_students,
-                })
+                    return render(request, 'upload_result.html', {
+                        'total_students_to_upload': total_students_to_upload,
+                        'already_exists_no': already_exists_no,
+                        'failed_no': failed_no,
+                        'success_no': success_no,
+                        'newly_added_no': newly_added_no,
+                        'already_exists_students': already_exists_students,
+                        'failed_students': failed_students,
+                        'success_students': success_students,
+                    })
+                except Exception as e:
+                    logger.error(f"Error processing file: {e}")
+                    # Optionally, handle the error gracefully
+                    return render(request, 'upload_result.html', {
+                        'error': 'An error occurred while processing the file. Please try again.'
+                    })
         else:
             print(f"Form errors: {form.errors}")
     else:
