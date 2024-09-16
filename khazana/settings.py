@@ -132,17 +132,25 @@
 ################################################################################
 
 
+############### Production Settings ##################
+
+
 from pathlib import Path
 import os
-import dj_database_url  # type: ignore
-from whitenoise import WhiteNoise  # type: ignore
+import dj_database_url  # type: ignore # for database connection management
+from whitenoise import WhiteNoise  # type: ignore # for serving static files in production
 
+# Base directory of the project
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-# Security
+# Security settings
 SECRET_KEY = os.environ.get('SECRET_KEY', 'django-insecure-default-khazana-secret-key')
+
+# Make sure DEBUG is off in production
 DEBUG = os.environ.get('DEBUG', 'False') == 'True'
-ALLOWED_HOSTS = ['new-fee-app.onrender.com']  # Add your production domain here
+
+# Add production domain here
+ALLOWED_HOSTS = ['new-fee-app.onrender.com', '127.0.0.1']
 
 # Application Definition
 INSTALLED_APPS = [
@@ -152,12 +160,12 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'fees',
+    'fees',  # Your custom app
 ]
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
-    'whitenoise.middleware.WhiteNoiseMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware',  # Whitenoise for serving static files
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -171,7 +179,7 @@ ROOT_URLCONF = 'khazana.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [BASE_DIR / 'templates'],
+        'DIRS': [BASE_DIR / 'templates'],  # Custom templates directory
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -186,19 +194,14 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'khazana.wsgi.application'
 
-# Database - Same as new_vision
+# Production Database Configuration using PostgreSQL (Use environment variables for security)
 DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'newvision_db',
-        'USER': 'newvision_db_user',
-        'PASSWORD': 'LLSVRdqZJRDoBbOiozg3JkYEhpkdEQHI',
-        'HOST': 'dpg-cqsrbgij1k6c73fn0iig-a.oregon-postgres.render.com',
-        'PORT': '5432',
-    }
+    'default': dj_database_url.config(
+        default=os.environ.get('DATABASE_URL', 'postgres://newvision_db_user:LLSVRdqZJRDoBbOiozg3JkYEhpkdEQHI@dpg-cqsrbgij1k6c73fn0iig-a.oregon-postgres.render.com:5432/newvision_db')
+    )
 }
 
-# Password Validators
+# Password validation for security
 AUTH_PASSWORD_VALIDATORS = [
     {
         'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator',
@@ -214,11 +217,21 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
-# Static and Media Files
+# Static files settings for production
 STATIC_URL = '/static/'
-STATICFILES_DIRS = [BASE_DIR / 'static']
-STATIC_ROOT = BASE_DIR / 'staticfiles'
+STATICFILES_DIRS = [BASE_DIR / 'static']  # Additional static file directories
+STATIC_ROOT = BASE_DIR / 'staticfiles'  # Where collected static files will be stored
+
+# Use WhiteNoise for static file compression and caching
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
 # Default primary key field type
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+
+# Additional Production Configurations
+DATA_UPLOAD_MAX_NUMBER_FIELDS = 500000  # Increase the limit of uploaded fields if needed
+# Default primary key field type
+DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+
